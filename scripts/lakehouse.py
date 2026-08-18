@@ -51,6 +51,11 @@ def reset(*paths: str) -> None:
 ICEBERG_ROOT = ROOT / "iceberg"
 
 
+# name -> live SQLAlchemy engine, so reset_catalog() can dispose it before
+# deleting the directory. Windows refuses to unlink an open file.
+_ENGINES: dict[str, object] = {}
+
+
 def _catalog_dir(name: str) -> Path:
     """Each caller gets its OWN catalog directory.
 
@@ -79,11 +84,16 @@ def catalog(name: str = "lab"):
 
     d = _catalog_dir(name)
     (d / "warehouse").mkdir(parents=True, exist_ok=True)
-    return SqlCatalog(
+    cat = SqlCatalog(
         name,
         uri=f"sqlite:///{d / 'catalog.db'}",
         warehouse=f"file://{d / 'warehouse'}",
     )
+    # Track the live SQLAlchemy engine so reset_catalog() can close the SQLite
+    # handle first. On POSIX an open file can be unlinked; on Windows it cannot
+    # (WinError 32), so without this the rmtree below silently no-ops.
+    _ENGINES[name] = getattr(cat, "engine", None)
+    return cat
 
 
 def reset_catalog(name: str = "lab") -> None:
@@ -92,6 +102,13 @@ def reset_catalog(name: str = "lab") -> None:
     Scoped to `name` on purpose — see `_catalog_dir`.
     """
     import shutil
+
+    engine = _ENGINES.pop(name, None)
+    if engine is not None:
+        try:
+            engine.dispose()          # release the SQLite file handle (Windows)
+        except Exception:
+            pass
 
     shutil.rmtree(_catalog_dir(name), ignore_errors=True)
 
