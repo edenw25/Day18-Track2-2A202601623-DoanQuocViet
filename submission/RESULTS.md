@@ -5,7 +5,14 @@ Every number below was produced on this machine by the executed notebooks in
 `.ipynb` files. Environment: **Windows 11 · Python 3.11.8 · deltalake 1.6.2 ·
 pyiceberg 0.11.1 · duckdb 1.5.5 · polars 1.43.2 · pyarrow 25.0.1**.
 
-Gates: `smoke` 9/9 · `pytest` 24/24 · `run-all` 8/8 (42.4 s).
+Gates: `smoke` 9/9 · `pytest` 24/24 · `run-all` 8/8 (35.8 s) —
+transcript and screenshot in
+[`screenshots/03_gates_transcript.md`](screenshots/03_gates_transcript.md).
+
+The per-notebook numbers below come from the executed `.ipynb` files committed
+alongside this document. `run-all` re-executes the `.py` sources rather than the
+notebooks, so its wall-clock timings vary run to run while the measured lab
+results do not.
 
 ---
 
